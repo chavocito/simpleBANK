@@ -26,8 +26,6 @@ func main() {
 		migrate.WithGlobalUniqueID(true),
 	)
 
-	client.Account.Get()
-
 	if err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}

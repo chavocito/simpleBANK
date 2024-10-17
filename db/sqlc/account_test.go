@@ -2,56 +2,78 @@ package db
 
 import (
 	"context"
-	"log"
 	"testing"
+	"time"
 
 	"github.com/chavocito/simple_bank/util"
 	"github.com/stretchr/testify/require"
 )
 
-var arg = CreateAccountParams{
-	Owner:    util.RandomOwner(),
-	Balance:  util.RandomAmount(),
-	Currency: util.RandomCurrency(),
-}
+func createRandomAccount(t *testing.T) Account {
+	arg := CreateAccountParams{
+		Owner:    util.RandomOwner(),
+		Balance:  util.RandomAmount(),
+		Currency: util.RandomCurrency(),
+	}
 
-func TestCreateAccount(t *testing.T) {
 	account, err := testQueries.CreateAccount(context.Background(), arg)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, account)
-
 	require.Equal(t, arg.Balance, account.Balance)
 	require.Equal(t, arg.Owner, account.Owner)
 	require.Equal(t, arg.Currency, account.Currency)
-
 	require.NotZero(t, account.Balance)
 	require.NotZero(t, account.CreatedAt)
+
+	return account
+}
+
+func TestCreateAccount(t *testing.T) {
+	createRandomAccount(t)
+}
+
+func TestGetAccount(t *testing.T) {
+	account1 := createRandomAccount(t)
+	account2, err := testQueries.GetAccount(context.Background(), account1.ID)
+
+	require.NotEmpty(t, account1, "Account1 is not an empty object")
+	require.NotEmpty(t, account2, "Account2 is not an empty object")
+	require.NoError(t, err, "The account creation query does not throw any errors")
+	require.Equal(t, account1, account2, "Accounts 1 and 2 are the same object")
+	require.WithinDuration(t, account1.CreatedAt, account2.CreatedAt, time.Second)
+}
+
+func TestUpdatedAccount(t *testing.T) {
+	account1 := createRandomAccount(t)
+	updateOwner := util.RandomOwner()
+	updateAmount := util.RandomAmount()
+
+	arg := UpdateAccountsParams{
+		ID:      account1.ID,
+		Owner:   updateOwner,
+		Balance: updateAmount,
+	}
+
+	err := testQueries.UpdateAccounts(context.Background(), arg)
+	account2, err := testQueries.GetAccount(context.Background(), account1.ID)
+
+	require.NoError(t, err)
+	require.NotEqual(t, account1, account2)
+	require.NotEmpty(t, account1)
+
+	require.NotEqual(t, account1.Owner, account2.Owner)
+	require.NotEqual(t, account1.Balance, account2.Balance)
 }
 
 func TestDeleteAccount(t *testing.T) {
-	var account Account
-	var ctx = context.Background()
+	acct := createRandomAccount(t)
 
-	accounts, err := testQueries.ListAccounts(ctx)
-	if err != nil {
-		log.Fatal("error getting accounts list:", err)
-	}
-	for _, acc := range accounts {
-		if acc.Owner == arg.Owner {
-			account = acc
-		}
-	}
+	err := testQueries.DeleteAccount(context.Background(), acct.ID)
+	acctQuer, errQuer := testQueries.GetAccount(context.Background(), acct.ID)
 
-	err = testQueries.DeleteAccount(ctx, account.ID)
-	if err != nil {
-		return
-	}
-
-	acc, err := testQueries.GetAccount(ctx, account.ID)
-
-	require.Empty(t, acc)
-	require.Zero(t, acc.Balance)
-	require.Empty(t, acc.Owner)
-	require.Empty(t, acc.Currency)
+	require.NoError(t, err, "No error is thrown when account deletes")
+	require.Error(t, err)
+	require.NoError(t, errQuer)
+	require.Empty(t, acctQuer)
 }

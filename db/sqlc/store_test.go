@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
+	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTransferTx(t *testing.T) {
 	store := NewStore(testDB)
 
-	account1, _ := createRandomAccount(t)
-	account2, _ := createRandomAccount(t)
+	account1 := createRandomAccount(t)
+	account2 := createRandomAccount(t)
 
 	n := 5
 	amount := int64(10)

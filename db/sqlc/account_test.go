@@ -61,19 +61,18 @@ func TestUpdatedAccount(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, account1, account2)
 	require.NotEmpty(t, account1)
-
 	require.NotEqual(t, account1.Owner, account2.Owner)
 	require.NotEqual(t, account1.Balance, account2.Balance)
 }
 
 func TestDeleteAccount(t *testing.T) {
-	acct := createRandomAccount(t)
+	account1 := createRandomAccount(t)
 
-	err := testQueries.DeleteAccount(context.Background(), acct.ID)
-	acctQuer, errQuer := testQueries.GetAccount(context.Background(), acct.ID)
+	err := testQueries.DeleteAccount(context.Background(), account1.ID)
+	account2, err := testQueries.GetAccount(context.Background(), account1.ID)
 
-	require.NoError(t, err, "No error is thrown when account deletes")
 	require.Error(t, err)
-	require.NoError(t, errQuer)
-	require.Empty(t, acctQuer)
+	require.NotEqual(t, account1, account2)
+	require.Empty(t, account2)
+	require.NotEqual(t, account1.Balance, account2.Balance)
 }
